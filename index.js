@@ -8,9 +8,9 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.APPPORT || 3003;
 
-// CORS configuration
+// CORS configuration to allow all domains
 const corsOptions = {
-  origin: "https://blue-partridge-803580.hostingersite.com", // Allow this domain
+  origin: true, // Allow all domains
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed methods
   credentials: true, // Allow credentials if needed
 };
