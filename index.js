@@ -1,5 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const https = require("https");
+const http = require("http");
+const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -32,7 +35,7 @@ const schoolRouter = require("./routes/School");
 const subPackageRouter = require("./routes/subPackages");
 const fetchRouter = require("./routes/fetchRoute");
 const acceptanceAppRoute = require("./routes/acceptance_app");
-const router = require("./routes/application_invoice");
+const invoiceRouter = require("./routes/application_invoice");
 
 // Route Usage
 app.use("/applications", applicationRouter);
@@ -49,7 +52,7 @@ app.use("/school", schoolRouter);
 app.use("/subPackages", subPackageRouter);
 app.use("/sync", fetchRouter);
 app.use("/acceptance_app", acceptanceAppRoute);
-app.use("/application_invoice", router);
+app.use("/application_invoice", invoiceRouter);
 
 // Health check route
 app.get("/", (req, res) => {
@@ -73,7 +76,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!", error: err.message });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// SSL options
+const sslOptions = {
+  key: fs.readFileSync('/etc/letsencrypt/live/srv690692.hstgr.cloud/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/srv690692.hstgr.cloud/fullchain.pem'),
+};
+
+// Start the HTTPS server
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`Server is running on https://srv690692.hstgr.cloud:${PORT}`);
 });
+
+// Optional: Redirect HTTP to HTTPS
+http.createServer((req, res) => {
+  res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+  res.end();
+}).listen(80);
