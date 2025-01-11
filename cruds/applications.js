@@ -3,6 +3,7 @@ const pool = require("../poolfile");
 
 const applicationCrud = {};
 
+// Application CRUD Operations
 applicationCrud.postApplication = async (
   user_id,
   student_name,
@@ -28,26 +29,20 @@ applicationCrud.postApplication = async (
   sync_status,
   date
 ) => {
-  // Step 1: Retrieve the last application number
   const lastQuery = `SELECT application_number FROM applications ORDER BY application_number DESC LIMIT 1`;
   const [lastResult] = await pool.execute(lastQuery);
   
   let newApplicationNumber;
   
   if (lastResult.length > 0) {
-    // Step 2: Extract the last number and increment it
     const lastApplicationNumber = lastResult[0].application_number;
-    const lastNumber = parseInt(lastApplicationNumber.slice(1)); // Remove 'A' and parse to integer
+    const lastNumber = parseInt(lastApplicationNumber.slice(1));
     const newNumber = lastNumber + 1;
-    
-    // Step 3: Format the new application number
-    newApplicationNumber = `A${String(newNumber).padStart(9, '0')}`; // Pad with zeros
+    newApplicationNumber = `A${String(newNumber).padStart(9, '0')}`;
   } else {
-    // If no applications exist, start with A000000001
     newApplicationNumber = 'A000000001';
   }
 
-  // Step 4: Prepare the insert query
   const query = `
     INSERT INTO applications (
       application_number, user_id, student_name, student_middlename, 
@@ -93,29 +88,27 @@ applicationCrud.postApplication = async (
     application_number: newApplicationNumber,
   };
 };
+
 applicationCrud.getApplicationByNumber = async (application_number) => {
   const query = `SELECT * FROM applications WHERE application_number = ?`;
   const values = [application_number];
   const [result] = await pool.execute(query, values);
-  return result[0]; // Return the first matching record
+  return result[0];
 };
 
-// Get all applications
 applicationCrud.getAllApplications = async () => {
   const query = `SELECT * FROM applications`;
   const [results] = await pool.execute(query);
   return results;
 };
 
-// Delete application by application number
 applicationCrud.deleteApplicationByNumber = async (application_number) => {
   const query = `DELETE FROM applications WHERE application_number = ?`;
   const values = [application_number];
   const [result] = await pool.execute(query, values);
-  return result.affectedRows > 0; // Return true if a row was deleted
+  return result.affectedRows > 0;
 };
 
-// Get applications by user ID
 applicationCrud.getApplicationsByUserId = async (user_id) => {
   const query = `SELECT * FROM applications WHERE user_id = ?`;
   const values = [user_id];
@@ -123,7 +116,6 @@ applicationCrud.getApplicationsByUserId = async (user_id) => {
   return results;
 };
 
-// Get applications by school ID
 applicationCrud.getApplicationsBySchoolId = async (school_id) => {
   const query = `SELECT * FROM applications WHERE school_id = ?`;
   const values = [school_id];
@@ -131,7 +123,6 @@ applicationCrud.getApplicationsBySchoolId = async (school_id) => {
   return results;
 };
 
-// Get applications by status
 applicationCrud.getApplicationsByStatus = async (status) => {
   const query = `SELECT * FROM applications WHERE status = ?`;
   const values = [status];
@@ -139,29 +130,21 @@ applicationCrud.getApplicationsByStatus = async (status) => {
   return results;
 };
 
-// Update application by application number
 applicationCrud.updateApplicationByNumber = async (application_number, updates) => {
   const fields = Object.keys(updates).map((key) => `${key} = ?`).join(", ");
   const values = [...Object.values(updates), application_number];
 
   const query = `UPDATE applications SET ${fields} WHERE application_number = ?`;
   const [result] = await pool.execute(query, values);
-  return result.affectedRows > 0; // Return true if a row was updated
-};
-
-applicationCrud.getApplicationsByStatus = async (status) => {
-  const query = `SELECT * FROM applications WHERE status = ?`;
-  const values = [status];
-  const [results] = await pool.execute(query, values);
-  return results;
+  return result.affectedRows > 0;
 };
 
 applicationCrud.getApplicationDetailsByNumber = async (application_number) => {
   const query = `
     SELECT 
-      a.*,           -- All columns from applications
-      ar.*,          -- All columns from academic_results
-      at.*           -- All columns from attachments
+      a.*, 
+      ar.*, 
+      at.* 
     FROM 
       applications a
     LEFT JOIN 
@@ -175,7 +158,7 @@ applicationCrud.getApplicationDetailsByNumber = async (application_number) => {
   const [results] = await pool.execute(query, values);
   
   if (results.length === 0) {
-    return null; // No application found
+    return null;
   }
 
   const applicationDetails = {
@@ -209,7 +192,6 @@ applicationCrud.getApplicationDetailsByNumber = async (application_number) => {
     attachments: [],
   };
 
-  // Function to deduplicate arrays based on a unique key
   const deduplicate = (array, key) => {
     const seen = new Set();
     return array.filter(item => {
@@ -222,7 +204,6 @@ applicationCrud.getApplicationDetailsByNumber = async (application_number) => {
     });
   };
 
-  // Iterate through the results and separate academic results and attachments
   results.forEach(row => {
     if (row.RID) {
       applicationDetails.academic_results.push({
@@ -241,26 +222,46 @@ applicationCrud.getApplicationDetailsByNumber = async (application_number) => {
     }
   });
 
-  // Deduplicate academic results and attachments
   applicationDetails.academic_results = deduplicate(applicationDetails.academic_results, 'RID');
   applicationDetails.attachments = deduplicate(applicationDetails.attachments, 'AID');
 
   return applicationDetails;
 };
-// Update application status to approved
+
 applicationCrud.approveApplicationByNumber = async (application_number) => {
   const query = `UPDATE applications SET status = 'approved' WHERE application_number = ?`;
   const values = [application_number];
   const [result] = await pool.execute(query, values);
-  return result.affectedRows > 0; // Return true if a row was updated
+  return result.affectedRows > 0;
 };
 
-// Update application status to rejected
 applicationCrud.rejectApplicationByNumber = async (application_number) => {
   const query = `UPDATE applications SET status = 'rejected' WHERE application_number = ?`;
   const values = [application_number];
   const [result] = await pool.execute(query, values);
-  return result.affectedRows > 0; // Return true if a row was updated
+  return result.affectedRows > 0;
+};
+
+// New method to get joined data from applications, Acceptance_App, and Invoice
+applicationCrud.getJoinedApplicationData = async (application_number) => {
+  const query = `
+    SELECT 
+      a.*, 
+      aa.*, 
+      i.* 
+    FROM 
+      applications a
+    JOIN 
+      Acceptance_App aa ON a.application_number = aa.application_number
+    JOIN 
+      Invoice i ON aa.invoice_id = i.invoice_id
+    WHERE 
+      a.application_number = ?`;
+
+  const values = [application_number];
+  const [results] = await pool.execute(query, values);
+  
+  return results; // Return the joined results
 };
 
 module.exports = applicationCrud;

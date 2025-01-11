@@ -4,7 +4,6 @@ const applicationRouter = express.Router();
 
 applicationRouter.post("/", async (req, res) => {
   const {
-    
     user_id,
     student_name,
     student_middlename,
@@ -32,7 +31,6 @@ applicationRouter.post("/", async (req, res) => {
 
   try {
     const response = await applicationCrud.postApplication(
-    
       user_id,
       student_name,
       student_middlename,
@@ -158,16 +156,8 @@ applicationRouter.patch("/:application_number", async (req, res) => {
     res.status(500).json({ status: "500", message: err.message });
   }
 });
-applicationRouter.get("/status/:status", async (req, res) => {
-  const { status } = req.params;
-  try {
-    const applications = await applicationCrud.getApplicationsByStatus(status);
-    res.status(200).json(applications);
-  } catch (err) {
-    console.error("Error occurred:", err);
-    res.status(500).json({ status: "500", message: err.message });
-  }
-});
+
+// Get application details
 applicationRouter.get("/details/:application_number", async (req, res) => {
   const { application_number } = req.params;
   try {
@@ -214,4 +204,21 @@ applicationRouter.patch("/reject/:application_number", async (req, res) => {
     res.status(500).json({ status: "500", message: err.message });
   }
 });
+
+// New route to get joined application data
+applicationRouter.get("/joined/:application_number", async (req, res) => {
+  const { application_number } = req.params;
+  try {
+    const joinedData = await applicationCrud.getJoinedApplicationData(application_number);
+    if (joinedData.length > 0) {
+      res.status(200).json(joinedData);
+    } else {
+      res.status(404).json({ status: "404", message: "Joined data not found" });
+    }
+  } catch (err) {
+    console.error("Error occurred:", err);
+    res.status(500).json({ status: "500", message: err.message });
+  }
+});
+
 module.exports = applicationRouter;
