@@ -48,7 +48,7 @@ classRouter.get("/:class_id", async (req, res) => {
 });
 
 // Update class by ID
-classRouter.put("/:class_id", async (req, res) => {
+classRouter.patch("/:class_id", async (req, res) => {
   const { class_id } = req.params;
   const updatedValues = req.body;
 
