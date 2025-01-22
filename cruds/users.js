@@ -61,6 +61,9 @@ userCrud.postUser = async (
     status: "200",
     message: "User saved successfully",
     user_id: user_id, // Return the custom user ID
+    account_type: account_type,
+    username: username,
+    email: email
   };
 };
 

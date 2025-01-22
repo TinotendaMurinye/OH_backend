@@ -3,35 +3,6 @@ const userCrud = require("../cruds/users"); // Update the path as necessary
 const userRouter = express.Router();
 
 // Create a new user
-userRouter.post("/", async (req, res) => {
-  const {
-    account_type,
-    username,
-    email,
-    password,
-    registration,
-    last_logged,
-    online_status,
-    reg_number,
-  } = req.body;
-
-  try {
-    const response = await userCrud.postUser(
-      account_type,
-      username,
-      email,
-      password,
-      registration,
-      last_logged,
-      online_status,
-      reg_number
-    );
-    res.status(201).json(response);
-  } catch (err) {
-    console.error("Error occurred:", err);
-    res.status(500).json({ status: "500", message: err.message });
-  }
-});
 
 // Get all users
 userRouter.get("/", async (req, res) => {
